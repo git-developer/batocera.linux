@@ -20,6 +20,16 @@ def generateControllerConfig(system, playersControllers):
     WIIMOTE = "Wiimote"
 
     API_SDL = "SDLController"
+    API_WIIMOTE = "Wiimote"
+
+    # from https://github.com/cemu-project/Cemu/blob/main/src/input/emulated/WPADController.h
+    WIIMOTE_TYPE_CORE = '0'
+    WIIMOTE_TYPE_NUNCHUCK = '1'
+    WIIMOTE_TYPE_CLASSIC = '2'
+    WIIMOTE_TYPE_MOTIONPLUS = '5'
+    WIIMOTE_TYPE_MOTIONPLUS_NUNCHUCK = '6'
+    WIIMOTE_TYPE_MOTIONPLUS_CLASSIC = '7'
+    WIIMOTE_TYPE_CLASSICPRO = '31'
 
     DEFAULT_DEADZONE       = '0.25'
     DEFAULT_RANGE          = '1'
@@ -142,6 +152,12 @@ def generateControllerConfig(system, playersControllers):
     def getConfigFileName(controller):
         return path.join(profilesDir, "controller{}.xml".format(controller))
 
+    def isWiimote(pad):
+        return false
+
+    def findWiimoteType(pad):
+        return WIIMOTE_TYPE_MOTIONPLUS_NUNCHUCK
+
 
     # Make controller directory if it doesn't exist
     if not path.isdir(profilesDir):
@@ -195,9 +211,16 @@ def generateControllerConfig(system, playersControllers):
                 type = PRO
         addTextElement(root, "type", type)
 
+        if isWiimote(pad):
+            api = API_WIIMOTE
+            deviceType = findWiimoteType(pad)
+            addTextElement(root, 'device_type', deviceType)
+        else:
+            api = API_SDL
+
         # Create controller configuration
         controllerNode = ET.SubElement(root, 'controller')
-        addTextElement(controllerNode, 'api', API_SDL)
+        addTextElement(controllerNode, 'api', api)
         addTextElement(controllerNode, 'uuid', "{}_{}".format(guid_n[pad.index], pad.guid)) # controller guid
         addTextElement(controllerNode, 'display_name', pad.realName) # controller name
         addTextElement(controllerNode, 'rumble', getOption('cemu_rumble', '0')) # % chosen

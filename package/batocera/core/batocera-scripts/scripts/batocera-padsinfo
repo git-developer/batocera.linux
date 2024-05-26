@@ -29,15 +29,20 @@ print_xml() {
   printf '<?xml version="1.0"?>\n'
   printf '<pads>\n'
   for padbat in /sys/class/power_supply/*/device/input/input*/event*; do
+      device_name=$(cat "${padbat}/device/name")
       device_path="/dev/$(read_value DEVNAME "${padbat}/uevent")"
+      battery_info="$(echo "${padbat}" | sed -e s+"device/input/input[0-9]*/event[0-9]*$"+""+)/uevent"
+      battery_capacity=$(read_battery_capacity "${battery_info}")
+
       sdlpad="$(printf "${sdl_info}" | grep -E "^${device_path} " | cut -d ' ' -f 2)"
       if [ "${sdlpad}" ]; then
-        battery_info="$(echo "${padbat}" | sed -e s+"device/input/input[0-9]*/event[0-9]*$"+""+)/uevent"
-        device_name=$(cat "${padbat}/device/name")
-        battery_capacity=$(read_battery_capacity "${battery_info}")
         battery_status=$(read_value POWER_SUPPLY_STATUS "${battery_info}")
         printf '  <pad device="%s" name="%s" id="%s" battery="%s" status="%s" />\n' \
         "${device_path}" "${device_name}" "${sdlpad}" "${battery_capacity}" "${battery_status}"
+      elif [ "${device_name}" = 'Nintendo Wii Remote' ]; then
+        wiimote_id=$((${wiimote_id:--1}+1))
+        printf '  <pad device="%s" name="%s" id="%s" battery="%s" />\n' \
+        "${device_path}" "${device_name}" "${wiimote_id}" "${battery_capacity}"
       fi
   done 2>/dev/null
   printf '</pads>\n'
